@@ -33,17 +33,19 @@
         </select>
         <button type="button" class="btn btn-primary" id="goButton">Go</button>
     </div>
-    <div id="invoiceInfo">
-        Number: <input type="text" id="numberInput">
-        Invoice date: <input type="date" id="invoiceDateInput">
-        Supply date: <input type="date" id="supplyDateInput">
-        Comment: <input type="text" id="commentInput">
-        <button type="button" class="btn btn-primary" id="addInvoiceButton">Add invoice</button>
+    <div id="invoiceInfo" style="display:none;">
+        <p>Number: <input type="text" id="numberInput"></p>
+        <p>Invoice date: <input type="date" id="invoiceDateInput"></p>
+        <p>Supply date: <input type="date" id="supplyDateInput"></p>
+        <p>Comment: <input type="text" id="commentInput"></p>
     </div>
+    <button type="button" class="btn btn-primary" id="addInvoiceButton">Add invoice</button>
+
     <table id="invoicesTable" class="table">
         <thead>
             <th id="date_created">Create</th>
             <th id="number">Number</th>
+            <th style="display:none;" id="date_due">Due</th>
             <th id="date_supply">Supply</th>
             <th id="comment">Comment</th>
             <th id="actions">Actions</th>
@@ -77,6 +79,7 @@
                     $('#invoicesTable tbody').append('<tr id="' + elem.id + '">'+
                                                         '<td>' + elem.date_created + '</td>'+
                                                         '<td>' + elem.number + '</td>'+
+                                                        '<td style="display:none;">' + elem.date_due + '</td>'+
                                                         '<td>' + elem.date_supply + '</td>'+
                                                         '<td>' + elem.comment + '</td>'+
                                                         '<td>' +
@@ -142,9 +145,9 @@
                     type: 'PATCH',
                     data: obj,
                     success: function(result) {
-                        invoiceIdToEdit = '';
-                        $('#addInvoiceButton').text('Add invoice');
-                        ClearInputs();
+
+
+
                         updateData();
                     }
                 });
@@ -156,18 +159,38 @@
             }
         }
 
+        function ShowInvoiceDialog(pTitle){
+            $('#invoiceInfo').dialog({
+                title: pTitle,
+                height: "auto",
+                width: 400,
+                modal: true,
+                buttons: {
+                    "OK": function() {
+                        CreateInvoice();
+                        $(this).dialog( "close" );
+                    },
+                    Cancel: function() {
+                        $(this).dialog( "close" );
+                    }
+                }
+            });
+        }
+        
         function editInvoice(invoiceId){
             invoiceIdToEdit = invoiceId;
-            $('#addInvoiceButton').text('Edit invoice');
+
             var rowToEdit = $('tr#' + invoiceId);
             $('#numberInput').val(rowToEdit.children()[1].innerText);
-            $('#invoiceDateInput').val(InvoiceDateToInputFormat(rowToEdit.children()[0].innerText));
-            $('#supplyDateInput').val(InvoiceDateToInputFormat(rowToEdit.children()[2].innerText));
-            $('#commentInput').val(rowToEdit.children()[3].innerText);
+            $('#invoiceDateInput').val(InvoiceDateToInputFormat(rowToEdit.children()[2].innerText));
+            $('#supplyDateInput').val(InvoiceDateToInputFormat(rowToEdit.children()[3].innerText));
+            $('#commentInput').val(rowToEdit.children()[4].innerText);
+
+            ShowInvoiceDialog('Edit invoice');
         }
 
         function DeleteInvoice(invoiceId){
-            if (confirm("Вы действительно желаете удалить накладную?")){
+            if (confirm("Do you really want to delete the invoice?")){
                 $.ajax({
                     url: baseInvoicesUrl + '/' + invoiceId,
                     type: 'DELETE',
@@ -183,7 +206,9 @@
                 updateData();
             });
             $('#addInvoiceButton').click(function(){
-                CreateInvoice();
+                invoiceIdToEdit = '';
+                ClearInputs();
+                ShowInvoiceDialog('Create invoice');
             });
             updateData();
         });
